@@ -1,5 +1,6 @@
-# frozen_string_literal: true
 # typed: strong
+# frozen_string_literal: true
+
 cask "macupdate" do
   version "6.4.1.450526"
   sha256 :no_check
