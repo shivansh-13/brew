@@ -564,14 +564,51 @@ describe Homebrew::CLI::Parser do
   end
 
   describe "--cask on linux", :needs_linux do
-    subject(:parser) do
-      described_class.new do
-        switch "--cask"
+    context "without --formula switch" do
+      subject(:parser) do
+        described_class.new do
+          switch "--cask"
+        end
+      end
+
+      it "throws an error when defined" do
+        expect { parser.parse(["--cask"]) }
+          .to output("Error: Invalid `--cask` usage: Casks do not work on Linux\n").to_stderr
+          .and not_to_output.to_stdout
+          .and raise_exception SystemExit
+      end
+
+      # Developers want to be able to use `audit` and `bump`
+      # commands for formulae and casks on Linux.
+      it "succeeds for developer commands" do
+        require "dev-cmd/cat"
+        args = Homebrew.cat_args.parse(["--cask", "cask_name"])
+        expect(args.cask?).to be(true)
       end
     end
 
-    it "throws an error when defined" do
-      expect { parser.parse(["--cask"]) }.to raise_error UsageError, /Casks are not supported on Linux/
+    context "with conflicting --formula switch" do
+      subject(:parser) do
+        described_class.new do
+          switch "--cask"
+          switch "--formula"
+          conflicts "--cask", "--formula"
+        end
+      end
+
+      it "throws an error when --cask defined" do
+        expect { parser.parse(["--cask"]) }
+          .to output("Error: Invalid `--cask` usage: Casks do not work on Linux\n").to_stderr
+          .and not_to_output.to_stdout
+          .and raise_exception SystemExit
+      end
+
+      it "throws an error when both defined" do
+        expect { parser.parse(["--cask", "--formula"]) }
+          .to output("Error: Invalid `--cask` usage: Casks do not work on Linux\n").to_stderr
+          .and not_to_output.to_stdout
+          .and raise_exception SystemExit
+      end
     end
   end
 

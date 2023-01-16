@@ -244,7 +244,7 @@ module Cask
         "caveats"        => (to_h_string_gsubs(caveats) unless caveats.empty?),
         "depends_on"     => depends_on,
         "conflicts_with" => conflicts_with,
-        "container"      => container,
+        "container"      => container&.pairs,
         "auto_updates"   => auto_updates,
       }
     end
@@ -288,13 +288,9 @@ module Cask
 
     def artifacts_list
       artifacts.map do |artifact|
-        key, value = if artifact.is_a? Artifact::AbstractFlightBlock
-          artifact.summarize
-        else
-          [artifact.class.dsl_key, to_h_gsubs(artifact.to_args)]
-        end
+        next artifact.to_h if artifact.is_a? Artifact::AbstractFlightBlock
 
-        { key => value }
+        { artifact.class.dsl_key => to_h_gsubs(artifact.to_args) }
       end
     end
 
